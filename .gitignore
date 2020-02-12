@@ -1,0 +1,14 @@
+# Packer
+**/packer_cache
+**/packer_output
+**/output-*
+**/*.box
+**/authorized_keys*
+**/preseed_production.cfg
+**/variables.json
+
+# Vagrant
+**/.vagrant
+vagrant/files
+vagrant/scripts
+vagrant/**/config.yaml

@@ -1,0 +1,60 @@
+{
+  "description": "Debian Development Environment VM boxer",
+
+  "variables": {
+    "username": "",
+    "password": "",
+    "testing": "testing",
+    "devenv": "devenv",
+    "outdir": "packer_output",
+    "testing_chksum": ""
+  },
+
+  "builders":
+  [
+    {
+      "name": "devenv",
+      "vm_name": "debian_devenv.qcow2",
+      "headless": true,
+      "output_directory": "{{ user `outdir` }}/devenv",
+      "disk_image": true,
+      "shutdown_command": "sudo poweroff",
+      "iso_url": "packer_output/testing/debian_testing.qcow2",
+      "iso_checksum_type": "sha512",
+      "iso_checksum": "{{ user `testing_chksum` }}",
+      "communicator": "ssh",
+      "ssh_timeout": "15m",
+      "ssh_username": "{{ user `username` }}",
+      "ssh_password": "{{ user `password` }}",
+      "accelerator": "kvm",
+      "boot_wait": "5s",
+      "type": "qemu"
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "script": "./scripts/networking.sh",
+      "execute_command": "sudo bash {{ .Path }}",
+      "only": ["devenv"]
+    },
+
+    {
+      "type": "shell",
+      "script": "./scripts/hostname.sh",
+      "execute_command": "sudo bash {{ .Path }} {{ user `devenv` }} {{ user `testing` }}",
+      "only": ["devenv"]
+    }
+  ],
+
+  "post-processors": [
+    {
+      "type": "vagrant",
+      "output": "packer_output/boxes/devenv.box",
+      "keep_input_artifact": true,
+      "vagrantfile_template": "./files/Vagrantfile",
+      "include": ["./files/metadata.json"]
+    }
+  ]
+}

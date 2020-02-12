@@ -1,0 +1,63 @@
+# encoding: utf-8
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require 'yaml'
+
+cur_dir = File.dirname(File.expand_path(__FILE__))
+conf = YAML.load_file("#{cur_dir}/config.yaml")
+user_conf = conf['conf']
+packages = conf['packages']
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "mybox"
+  config.vm.hostname = "generic"
+
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.cpus = 2
+    libvirt.memory = 2048
+  end
+
+  config.nfs.verify_installed = false
+  config.vm.synced_folder ".", "/vagrant", type: "rsync"
+
+  # prepare home folder
+  config.vm.provision "shell" do |home_prep|
+    home_prep.path = "scripts/#{user_conf['home_script']}"
+    home_prep.privileged = false
+  end
+
+  # upgrade packages
+  config.vm.provision "shell",
+  env: {"DEBIAN_FRONTEND" => "noninteractive"},
+  inline: <<-SHELL
+    apt-get update
+    apt-get upgrade -y
+    apt-get autoremove -y
+  SHELL
+
+  # install packages
+  packages.each do |package|
+    config.vm.provision "shell",
+    env: {"DEBIAN_FRONTEND" => "noninteractive"},
+    inline: "apt-get install -y #{package}"
+  end
+
+  # install vim plugins
+  config.vm.provision "shell" do |vim_plugs|
+    vim_plugs.path = "scripts/#{user_conf['vim_script']}"
+    vim_plugs.args = "/vagrant/files/#{user_conf['vim_plugs']}"
+    vim_plugs.privileged = false
+  end
+
+  # force password change
+  config.vm.provision "shell",
+    inline: "chage -d 0 #{user_conf['vmuser']}; chage -d 0 root"
+
+  config.ssh.username = user_conf['vmuser']
+  config.ssh.private_key_path = "/home/#{user_conf['localuser']}/.ssh/#{user_conf['priv_key']}"
+  config.ssh.forward_agent = true
+  config.ssh.forward_x11 = true
+  config.ssh.port = 22
+end

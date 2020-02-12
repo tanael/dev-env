@@ -1,0 +1,162 @@
+{
+  "description": "Debian VM",
+
+  "variables": {
+    "disk_size": "20480",
+    "iso_version": "10.2.0",
+    "iso_checksum": "5495c8378b829df7386b9bac5bc701f7ad8b2843d088e8636c89549519cf176100eacb90121af3934a8c5229cbe7d2fd23342eda330d56fb45fb2d91f2117fb4",
+    "username": "",
+    "password": "",
+    "outdir": "packer_output",
+    "buster": "buster",
+    "gitsrv": "gitsrv",
+    "testing": "testing",
+    "buster_chksum": "",
+    "testing_chksum": ""
+  },
+
+  "builders":
+  [
+    {
+      "name": "buster",
+      "vm_name": "debian_buster.qcow2",
+
+      "type": "qemu",
+      "accelerator": "kvm",
+      "disk_size": "{{ user `disk_size` }}",
+      "format": "qcow2",
+      "net_device": "virtio-net",
+      "disk_interface": "virtio",
+
+      "qemuargs": [
+        ["-m", "1024M"]
+      ],
+
+      "headless": true,
+
+      "output_directory": "{{ user `outdir` }}/buster",
+
+      "iso_checksum": "{{ user `iso_checksum` }}",
+      "iso_checksum_type": "sha512",
+      "iso_checksum_url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA512SUMS",
+      "iso_url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-{{ user `iso_version` }}-amd64-netinst.iso",
+
+      "http_directory": "http_preseed",
+
+      "boot_command": [
+        "<esc><wait>",
+        "install <wait>",
+        "auto <wait>",
+        "url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed_production.cfg <wait>",
+        "debian-installer=en_US.UTF-8 <wait>",
+        "locale=en_US.UTF-8 <wait>",
+        "kbd-chooser/method=us <wait>",
+        "netcfg/get_hostname={{ user `buster` }} <wait>",
+        "netcfg/get_domain=mylab <wait>",
+        "keyboard-configuration/xkb-keymap=us <wait>",
+	"fb=false <wait>",
+	"debconf/frontend=noninteractive <wait>",
+	"console-setup/ask_detect=false <wait>",
+	"console-keymaps-at/keymap=us <wait>",
+	"grub-installer/bootdev=/dev/vda <wait>",
+        "<enter><wait>"
+      ],
+      "boot_wait": "3s",
+
+      "shutdown_command": "sudo poweroff",
+
+      "communicator": "ssh",
+      "ssh_timeout": "15m",
+      "ssh_username": "{{ user `username` }}",
+      "ssh_password": "{{ user `password` }}"
+    },
+
+    {
+      "name": "testing",
+      "vm_name": "debian_testing.qcow2",
+      "headless": true,
+      "output_directory": "{{ user `outdir` }}/testing",
+      "disk_image": true,
+      "shutdown_command": "sudo poweroff",
+      "iso_url": "packer_output/buster/debian_buster.qcow2",
+      "iso_checksum_type": "sha512",
+      "iso_checksum": "{{ user `buster_chksum` }}",
+      "communicator": "ssh",
+      "ssh_timeout": "15m",
+      "ssh_username": "{{ user `username` }}",
+      "ssh_password": "{{ user `password` }}",
+      "accelerator": "kvm",
+      "boot_wait": "5s",
+      "type": "qemu"
+    },
+
+    {
+      "name": "gitsrv",
+      "vm_name": "debian_gitsrv.qcow2",
+      "headless": true,
+      "output_directory": "{{ user `outdir` }}/gitsrv",
+      "disk_image": true,
+      "shutdown_command": "sudo poweroff",
+      "iso_url": "packer_output/buster/debian_buster.qcow2",
+      "iso_checksum_type": "sha512",
+      "iso_checksum": "{{ user `buster_chksum` }}",
+      "communicator": "ssh",
+      "ssh_timeout": "15m",
+      "ssh_username": "{{ user `username` }}",
+      "ssh_password": "{{ user `password` }}",
+      "accelerator": "kvm",
+      "boot_wait": "5s",
+      "type": "qemu"
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": ["mkdir /home/{{ user `username` }}/.ssh"],
+      "only": ["buster"]
+    },
+
+    {
+      "type": "file",
+      "source": "./files/authorized_keys_production",
+      "destination": "/home/{{ user `username` }}/.ssh/authorized_keys",
+      "only": ["buster"]
+    },
+
+    {
+      "type": "shell",
+      "script": "./scripts/upgrade.sh",
+      "execute_command": "sudo bash {{ .Path }}",
+      "only": ["buster"]
+    },
+
+    {
+      "type": "shell",
+      "script": "./scripts/install_git_srv.sh",
+      "execute_command": "sudo bash {{ .Path }} {{ user `username` }} {{ user `password` }}",
+      "only": ["gitsrv"]
+    },
+
+    {
+      "type": "shell",
+      "script": "./scripts/hostname.sh",
+      "execute_command": "sudo bash {{ .Path }} {{ user `gitsrv` }} {{ user `buster` }}",
+      "only": ["gitsrv"]
+    },
+
+    {
+      "type": "shell",
+      "script": "./scripts/testing_dist-upgrade.sh",
+      "execute_command": "sudo bash {{ .Path }}",
+      "only": ["testing"]
+    },
+
+    {
+      "type": "shell",
+      "script": "./scripts/hostname.sh",
+      "execute_command": "sudo bash {{ .Path }} {{ user `testing` }} {{ user `buster` }}",
+      "only": ["testing"]
+    }
+  ]
+}
