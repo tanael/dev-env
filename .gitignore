@@ -12,3 +12,5 @@
 vagrant/files
 vagrant/scripts
 vagrant/**/config.yaml
+
+tags
