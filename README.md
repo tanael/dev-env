@@ -13,8 +13,25 @@ The template preseed file `preseed.cfg` is here as an example, the current
 packer setup will look for `preseed_production.cfg` that you should use and
 customise to suit your needs.
 
-Some variables are provided through `variables.json`. Make sure such a file and
-contains the necessary variables.
+Examples of customised information:
+  - country code
+  - root password
+  - username
+  - user password
+  - timezone
+  - sudoer
+
+Some variables are provided through `variables.json`. Make sure such a file 
+exists and contains the necessary customised information.
+
+E.g:
+```json
+{
+  "username": "foo",
+  "password": "bar"
+}
+
+```
 
 ### Usage
 
@@ -33,8 +50,12 @@ Vagrant based on `.box` image created with `packer`.
 
 ### Requirements
 
-Some variables are provided through `config.yaml`. Make sure such a file and
-contains the necessary variables.
+Some variables are provided through `config.yaml`. Make sure such a file exists
+and contains the necessary variables.
+
+E.g:
+```yaml
+```
 
 The `Vagrantfile` is also expecting scripts and data files that are not version
 controlled, either remove / comment out those calls or create the scripts and
@@ -50,3 +71,7 @@ vagrant box add --name mybox /path/to/vagrant.box
 
 Then spin up the environment by running the following command from a folder
 containing a `Vagrantfile`
+
+```bash
+vagrant up
+```
