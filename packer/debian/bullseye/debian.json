@@ -8,18 +8,18 @@
     "username": "",
     "password": "",
     "outdir": "packer_output",
-    "buster": "buster",
+    "bullseye": "bullseye",
     "gitsrv": "gitsrv",
     "testing": "testing",
-    "buster_chksum": "",
+    "bullseye_chksum": "",
     "testing_chksum": ""
   },
 
   "builders":
   [
     {
-      "name": "buster",
-      "vm_name": "debian_buster.qcow2",
+      "name": "bullseye",
+      "vm_name": "debian_bullseye.qcow2",
 
       "type": "qemu",
       "accelerator": "kvm",
@@ -34,7 +34,7 @@
 
       "headless": true,
 
-      "output_directory": "{{ user `outdir` }}/buster",
+      "output_directory": "{{ user `outdir` }}/bullseye",
 
       "iso_checksum": "file:https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA512SUMS",
       "iso_url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-{{ user `iso_version` }}-amd64-netinst.iso",
@@ -49,7 +49,7 @@
         "debian-installer=en_US.UTF-8 <wait>",
         "locale=en_US.UTF-8 <wait>",
         "kbd-chooser/method=us <wait>",
-        "netcfg/get_hostname={{ user `buster` }} <wait>",
+        "netcfg/get_hostname={{ user `bullseye` }} <wait>",
         "netcfg/get_domain=mylab <wait>",
         "keyboard-configuration/xkb-keymap=us <wait>",
 	"fb=false <wait>",
@@ -76,8 +76,8 @@
       "output_directory": "{{ user `outdir` }}/testing",
       "disk_image": true,
       "shutdown_command": "sudo poweroff",
-      "iso_url": "packer_output/buster/debian_buster.qcow2",
-      "iso_checksum": "sha512:{{ user `buster_chksum` }}",
+      "iso_url": "packer_output/bullseye/debian_bullseye.qcow2",
+      "iso_checksum": "sha512:{{ user `bullseye_chksum` }}",
       "communicator": "ssh",
       "ssh_timeout": "15m",
       "ssh_username": "{{ user `username` }}",
@@ -94,8 +94,8 @@
       "output_directory": "{{ user `outdir` }}/gitsrv",
       "disk_image": true,
       "shutdown_command": "sudo poweroff",
-      "iso_url": "packer_output/buster/debian_buster.qcow2",
-      "iso_checksum": "sha512:{{ user `buster_chksum` }}",
+      "iso_url": "packer_output/bullseye/debian_bullseye.qcow2",
+      "iso_checksum": "sha512:{{ user `bullseye_chksum` }}",
       "communicator": "ssh",
       "ssh_timeout": "15m",
       "ssh_username": "{{ user `username` }}",
@@ -110,21 +110,21 @@
     {
       "type": "shell",
       "inline": ["mkdir /home/{{ user `username` }}/.ssh"],
-      "only": ["buster"]
+      "only": ["bullseye"]
     },
 
     {
       "type": "file",
       "source": "./files/authorized_keys_production",
       "destination": "/home/{{ user `username` }}/.ssh/authorized_keys",
-      "only": ["buster"]
+      "only": ["bullseye"]
     },
 
     {
       "type": "shell",
       "script": "./scripts/upgrade.sh",
       "execute_command": "sudo bash {{ .Path }}",
-      "only": ["buster"]
+      "only": ["bullseye"]
     },
 
     {
@@ -137,7 +137,7 @@
     {
       "type": "shell",
       "script": "./scripts/hostname.sh",
-      "execute_command": "sudo bash {{ .Path }} {{ user `gitsrv` }} {{ user `buster` }}",
+      "execute_command": "sudo bash {{ .Path }} {{ user `gitsrv` }} {{ user `bullseye` }}",
       "only": ["gitsrv"]
     },
 
@@ -151,7 +151,7 @@
     {
       "type": "shell",
       "script": "./scripts/hostname.sh",
-      "execute_command": "sudo bash {{ .Path }} {{ user `testing` }} {{ user `buster` }}",
+      "execute_command": "sudo bash {{ .Path }} {{ user `testing` }} {{ user `bullseye` }}",
       "only": ["testing"]
     }
   ]

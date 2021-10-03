@@ -15,8 +15,8 @@ devenv: testingsum
 testingsum: testing
 		$(eval testingsum := $(shell sha512sum packer_output/testing/debian_testing.qcow2 | cut -d ' ' -f 1))
 
-testing: bustersum
-		packer build -only=testing -var-file=variables.json -var 'buster_chksum=$(bustersum)' debian.json; \
+testing: bullseyesum
+		packer build -only=testing -var-file=variables.json -var 'bullseye_chksum=$(bullseyesum)' debian.json; \
 				case "$$?" in \
 				0) \
 				echo "Image successfully created, continue..." \
@@ -29,8 +29,8 @@ testing: bustersum
 				;; \
 				esac;
 
-gitsrv: bustersum
-		packer build -only=gitsrv -var-file=variables.json -var 'buster_chksum=$(bustersum)' debian.json; \
+gitsrv: bullseyesum
+		packer build -only=gitsrv -var-file=variables.json -var 'bullseye_chksum=$(bullseyesum)' debian.json; \
 				case "$$?" in \
 				0) \
 				echo "Image successfully created, continue..." \
@@ -43,11 +43,11 @@ gitsrv: bustersum
 				;; \
 				esac;
 
-bustersum: buster
-		$(eval bustersum := $(shell sha512sum packer_output/buster/debian_buster.qcow2 | cut -d ' ' -f 1))
+bullseyesum: bullseye
+		$(eval bullseyesum := $(shell sha512sum packer_output/bullseye/debian_bullseye.qcow2 | cut -d ' ' -f 1))
 
-buster: debian.json
-		packer build -only=buster -var-file=variables.json debian.json; \
+bullseye: debian.json
+		packer build -only=bullseye -var-file=variables.json debian.json; \
 				case "$$?" in \
 				0) \
 				echo "Image successfully created, continue..." \
