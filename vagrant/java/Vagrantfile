@@ -11,7 +11,7 @@ packages = conf['packages']
 
 Vagrant.configure("2") do |config|
 
-  config.vm.box = "mybox"
+  config.vm.box = "bookworm_20211003"
   config.vm.hostname = "java"
 
   config.vm.provider :libvirt do |libvirt|
@@ -21,12 +21,6 @@ Vagrant.configure("2") do |config|
 
   config.nfs.verify_installed = false
   config.vm.synced_folder ".", "/vagrant", type: "rsync"
-
-  # prepare home folder
-  config.vm.provision "shell" do |home_prep|
-    home_prep.path = "scripts/#{user_conf['home_script']}"
-    home_prep.privileged = false
-  end
 
   # upgrade packages
   config.vm.provision "shell",
@@ -44,18 +38,15 @@ Vagrant.configure("2") do |config|
     inline: "apt-get install -y #{package}"
   end
 
-  # install vim plugins
-  config.vm.provision "shell" do |vim_plugs|
-    vim_plugs.path = "scripts/#{user_conf['vim_script']}"
-    vim_plugs.args = "/vagrant/files/#{user_conf['vim_plugs']}"
-    vim_plugs.privileged = false
-  end
+  # copy ssh config
+  config.vm.provision "file",
+    source: "/home/#{user_conf['localuser']}/.ssh/config",
+    destination: "/home/#{user_conf['vmuser']}/.ssh/config"
 
-  # prepare java
-  config.vm.provision "shell" do |prep_java|
-    prep_java.path = "scripts/#{user_conf['java_script']}"
-    prep_java.privileged = false
-  end
+  # copy ssh known_hosts
+  config.vm.provision "file",
+    source: "/home/#{user_conf['localuser']}/.ssh/known_hosts",
+    destination: "/home/#{user_conf['vmuser']}/.ssh/known_hosts"
 
   # force password change
   config.vm.provision "shell",
