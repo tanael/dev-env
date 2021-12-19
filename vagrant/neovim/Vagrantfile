@@ -11,7 +11,7 @@ packages = conf['packages']
 
 Vagrant.configure("2") do |config|
 
-  config.vm.box = "bookworm_20211003"
+  config.vm.box = "bookworm_20211212"
   config.vm.hostname = "neovim"
 
   config.vm.provider :libvirt do |libvirt|
