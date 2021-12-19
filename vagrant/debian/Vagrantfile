@@ -1,0 +1,60 @@
+# encoding: utf-8
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require 'yaml'
+
+cur_dir = File.dirname(File.expand_path(__FILE__))
+conf = YAML.load_file("#{cur_dir}/config.yaml")
+user_conf = conf['conf']
+packages = conf['packages']
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "bookworm_20211212"
+  config.vm.hostname = "debian"
+
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.cpus = 4
+    libvirt.memory = 5120
+  end
+
+  config.nfs.verify_installed = false
+  config.vm.synced_folder ".", "/vagrant", type: "rsync"
+
+  # upgrade packages
+  config.vm.provision "shell",
+  env: {"DEBIAN_FRONTEND" => "noninteractive"},
+  inline: <<-SHELL
+    apt-get update
+    apt-get upgrade -y
+    apt-get autoremove -y
+  SHELL
+
+  # install packages
+  packages.each do |package|
+    config.vm.provision "shell",
+    env: {"DEBIAN_FRONTEND" => "noninteractive"},
+    inline: "apt-get install -y #{package}"
+  end
+
+  # copy ssh config
+  config.vm.provision "file",
+    source: "/home/#{user_conf['localuser']}/.ssh/config",
+    destination: "/home/#{user_conf['vmuser']}/.ssh/config"
+
+  # copy ssh known_hosts
+  config.vm.provision "file",
+    source: "/home/#{user_conf['localuser']}/.ssh/known_hosts",
+    destination: "/home/#{user_conf['vmuser']}/.ssh/known_hosts"
+
+  # force password change
+  config.vm.provision "shell",
+    inline: "chage -d 0 #{user_conf['vmuser']}; chage -d 0 root"
+
+  config.ssh.username = user_conf['vmuser']
+  config.ssh.private_key_path = "/home/#{user_conf['localuser']}/.ssh/#{user_conf['priv_key']}"
+  config.ssh.forward_agent = true
+  config.ssh.forward_x11 = true
+  config.ssh.port = 22
+end
