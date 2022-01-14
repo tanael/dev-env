@@ -5,9 +5,11 @@
 require 'yaml'
 
 cur_dir = File.dirname(File.expand_path(__FILE__))
+default_config = YAML.load_file("#{cur_dir}/default_config.yaml")
 conf = YAML.load_file("#{cur_dir}/config.yaml")
 user_conf = conf['conf']
 packages = conf['packages']
+default_packages = conf['packages']
 
 Vagrant.configure("2") do |config|
 
@@ -30,6 +32,13 @@ Vagrant.configure("2") do |config|
     apt-get upgrade -y
     apt-get autoremove -y
   SHELL
+
+  # install packages
+  default_packages.each do |package|
+    config.vm.provision "shell",
+    env: {"DEBIAN_FRONTEND" => "noninteractive"},
+    inline: "apt-get install -y #{package}"
+  end
 
   # install packages
   packages.each do |package|
