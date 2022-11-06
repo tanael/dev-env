@@ -99,3 +99,9 @@ containing a `Vagrantfile`
 ```bash
 vagrant up
 ```
+
+Debug:
+
+```bash
+vagrant up --debug
+```
